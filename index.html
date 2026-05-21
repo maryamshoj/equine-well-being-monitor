@@ -1,1 +1,907 @@
 
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EquiSense — Equine Mood & Pain Assessment</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brown:  { DEFAULT:'#8B5A2B', deep:'#5C3A1E', soft:'#B58463' },
+          cream:  { DEFAULT:'#F5EDE1', soft:'#FBF6EE', deep:'#EADFCB' },
+          forest: { DEFAULT:'#2C3F2F', deep:'#1B281C' },
+          gold:   { DEFAULT:'#C9A24B', soft:'#E6CB80', deep:'#9C7A2E' },
+          ink:    '#241B12',
+        },
+        fontFamily: {
+          serif: ['"Playfair Display"','serif'],
+          sans:  ['Inter','system-ui','sans-serif'],
+        },
+        boxShadow: {
+          luxe: '0 30px 60px -25px rgba(60,40,20,0.35), 0 8px 20px -10px rgba(60,40,20,0.25)',
+          gold: '0 0 0 1px rgba(201,162,75,0.4), 0 10px 30px -10px rgba(201,162,75,0.35)',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  :root{
+    --brown:#8B5A2B; --cream:#F5EDE1; --forest:#2C3F2F; --gold:#C9A24B; --ink:#241B12;
+  }
+  html,body{ background:var(--cream); color:var(--ink); font-family:Inter,system-ui,sans-serif; }
+  .font-serif{ font-family:"Playfair Display",serif; letter-spacing:-0.01em;}
+  /* Background scene */
+  .scene{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(201,162,75,0.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(44,63,47,0.18), transparent 60%),
+      linear-gradient(180deg, #F8F1E3 0%, #F5EDE1 40%, #EADFCB 100%);
+    position:relative; overflow:hidden;
+  }
+  .scene::before{
+    content:""; position:absolute; inset:auto -10% -20% -10%; height:70%;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'><g fill='%232C3F2F' opacity='0.07'><path d='M120 320c10-40 40-70 80-80 10-30 40-50 80-50 20-30 60-40 100-30 30-10 70 0 90 30 30 0 60 20 70 50 30 10 50 40 50 70 0 20-20 30-40 30H140c-20 0-30-10-20-20z'/><path d='M610 230c10-25 0-55-25-65-5-25-30-40-55-30-15-15-40-15-55 0-25-5-50 10-55 35-20 5-30 30-20 50 5 15 20 25 35 25h150c15 0 25-5 25-15z'/></g></svg>");
+    background-repeat:no-repeat; background-position:bottom right; background-size:contain;
+    pointer-events:none;
+  }
+  .grain{ position:absolute; inset:0; pointer-events:none; opacity:.05; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .card{
+    background:linear-gradient(180deg,#FFFDF8 0%, #FBF6EE 100%);
+    border:1px solid rgba(139,90,43,0.12);
+    border-radius:1.25rem;
+    box-shadow:0 30px 60px -25px rgba(60,40,20,0.25), 0 8px 20px -10px rgba(60,40,20,0.15);
+    transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+  }
+  .card:hover{ transform:translateY(-4px); border-color:rgba(201,162,75,0.5); box-shadow:0 40px 70px -30px rgba(60,40,20,0.35), 0 12px 24px -10px rgba(201,162,75,0.25);}
+  .btn{
+    display:inline-flex; align-items:center; gap:.6rem; padding:.95rem 1.6rem;
+    border-radius:9999px; font-weight:600; letter-spacing:.02em;
+    transition:transform .25s ease, box-shadow .25s ease, background .25s ease, color .25s ease;
+  }
+  .btn-primary{
+    background:linear-gradient(180deg,#8B5A2B,#6E4520); color:#FBF6EE;
+    border:1px solid rgba(201,162,75,0.7);
+    box-shadow:0 12px 30px -12px rgba(110,69,32,0.55), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 20px 40px -14px rgba(110,69,32,0.65), 0 0 0 3px rgba(201,162,75,0.25);}
+  .btn-ghost{
+    background:transparent; color:#5C3A1E; border:1px solid rgba(139,90,43,0.35);
+  }
+  .btn-ghost:hover{ background:rgba(139,90,43,0.06); border-color:rgba(201,162,75,0.7); color:#3a2614;}
+  .btn-gold{
+    background:linear-gradient(180deg,#E6CB80,#C9A24B); color:#3a2614;
+    border:1px solid rgba(110,69,32,0.4);
+    box-shadow:0 12px 28px -12px rgba(201,162,75,0.6);
+  }
+  .btn-gold:hover{ transform:translateY(-2px); box-shadow:0 20px 38px -14px rgba(201,162,75,0.8);}
+  .chip{
+    display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .7rem;
+    border-radius:9999px; font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    background:rgba(44,63,47,0.08); color:#2C3F2F; border:1px solid rgba(44,63,47,0.15);
+  }
+  .divider{ height:1px; background:linear-gradient(90deg,transparent, rgba(139,90,43,0.35), transparent); }
+  /* Slider */
+  input[type=range].lux{
+    -webkit-appearance:none; width:100%; height:10px; border-radius:9999px; outline:none;
+    background:linear-gradient(90deg,#2C3F2F 0%, #C9A24B 50%, #B23A2E 100%);
+    box-shadow:inset 0 1px 2px rgba(0,0,0,0.25);
+  }
+  input[type=range].lux::-webkit-slider-thumb{
+    -webkit-appearance:none; width:28px; height:28px; border-radius:9999px;
+    background:radial-gradient(circle at 30% 30%, #FBF6EE, #C9A24B 70%, #8B5A2B);
+    border:2px solid #5C3A1E; cursor:pointer;
+    box-shadow:0 6px 16px -4px rgba(60,40,20,0.5);
+  }
+  input[type=range].lux::-moz-range-thumb{
+    width:28px; height:28px; border-radius:9999px;
+    background:radial-gradient(circle at 30% 30%, #FBF6EE, #C9A24B 70%, #8B5A2B);
+    border:2px solid #5C3A1E; cursor:pointer;
+    box-shadow:0 6px 16px -4px rgba(60,40,20,0.5);
+  }
+  .fade-up{ animation:fu .55s ease both;}
+  @keyframes fu{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+  .shimmer{
+    background:linear-gradient(90deg,transparent, rgba(201,162,75,0.35), transparent);
+    background-size:200% 100%;
+    animation:sh 2.6s ease-in-out infinite;
+  }
+  @keyframes sh{ 0%{background-position:200% 0;} 100%{background-position:-200% 0;}}
+  .ring-gold{ box-shadow:0 0 0 1px rgba(201,162,75,0.5), 0 12px 30px -10px rgba(201,162,75,0.3);}
+  .num-display{
+    font-family:"Playfair Display",serif; font-weight:700;
+    background:linear-gradient(180deg,#8B5A2B,#5C3A1E);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .dot{ width:10px; height:10px; border-radius:9999px; display:inline-block;}
+  /* Print */
+  @media print{
+    .no-print{ display:none !important; }
+    body{ background:white;}
+    .card{ box-shadow:none; border-color:#ddd;}
+    .scene::before{ display:none;}
+  }
+</style>
+</head>
+<body class="scene min-h-screen">
+<div class="grain"></div>
+
+<!-- Header -->
+<header class="no-print sticky top-0 z-30 backdrop-blur bg-cream/70 border-b border-brown/10">
+  <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between gap-4">
+    <button data-act="home" class="flex items-center gap-3 group">
+      <span class="w-10 h-10 rounded-full grid place-items-center bg-forest text-cream shadow-luxe">
+        <!-- horse silhouette -->
+        <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M4 18c1-4 4-6 7-6l1-3 2 1 1-2 3 2c2 1 3 3 3 5v3h-2v-2h-3v2h-2v-2H9v2H4z"/></svg>
+      </span>
+      <div class="text-left">
+        <div class="font-serif text-xl text-forest leading-none">EquiSense</div>
+        <div class="text-[11px] tracking-[0.2em] uppercase text-brown/70 mt-1">Equine Wellness Atelier</div>
+      </div>
+    </button>
+    <div class="hidden md:flex items-center gap-2">
+      <span class="chip"><span class="dot bg-forest"></span> Assessment</span>
+      <span id="progressText" class="text-sm text-ink/70 font-medium">0 / 11 complete</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button data-act="results" class="btn btn-ghost text-sm">Results</button>
+      <button data-act="reset" class="btn btn-ghost text-sm">Reset</button>
+    </div>
+  </div>
+  <div class="h-1 bg-brown/10">
+    <div id="progressBar" class="h-full bg-gradient-to-r from-forest via-gold to-brown transition-all" style="width:0%"></div>
+  </div>
+</header>
+
+<main id="app" class="max-w-6xl mx-auto px-5 py-10 md:py-14"></main>
+
+<footer class="no-print max-w-6xl mx-auto px-5 py-10 text-center text-xs text-ink/50">
+  <div class="divider mb-6"></div>
+  EquiSense © — For professional use by trainers & veterinarians. Not a substitute for veterinary care.
+</footer>
+
+<script>
+/* =========================================================
+   EquiSense v3 — Premium Equine Assessment
+========================================================= */
+
+// ---------- Data: 11 parameters with 1/3/5/7/10 rubric ----------
+const RUBRIC_STEPS = [1,3,5,7,10];
+
+const PARAMETERS = [
+  {
+    key:'weight', section:'legs',
+    title:'Balanced Weight on All Four Limbs',
+    desc:'Even distribution of body weight across all four limbs at rest.',
+    rubric:{
+      1:'Perfectly square stance, all four limbs bearing weight evenly.',
+      3:'Slight unloading of one limb, otherwise relaxed.',
+      5:'Visible weight shift; one leg consistently rested.',
+      7:'Clear avoidance of weight bearing on a limb.',
+      10:'Pronounced three-legged stance or constant shifting; refusal to load a limb.'
+    }
+  },
+  {
+    key:'lameness', section:'legs',
+    title:'Lameness Check',
+    desc:'Symmetry and fluidity of movement at walk and trot.',
+    rubric:{
+      1:'No lameness; fluid, symmetrical movement.',
+      3:'Very mild irregularity, barely noticeable.',
+      5:'Moderate lameness visible at trot.',
+      7:'Clear lameness with head bob.',
+      10:'Obvious severe lameness, strong head bob, or refusal to move.'
+    }
+  },
+  {
+    key:'headpos', section:'mental',
+    title:'Head Carried Low or High',
+    desc:'Resting head carriage relative to the withers.',
+    rubric:{
+      1:'Neutral, relaxed head carriage at wither height.',
+      3:'Slightly low or high — attentive but calm.',
+      5:'Persistently lowered or elevated head; subdued or alert.',
+      7:'Dull lowered head or rigid high carriage with tension.',
+      10:'Extreme posture — head pressed down or stargazing; severe distress.'
+    }
+  },
+  {
+    key:'flanks', section:'stomach',
+    title:'Frequent Looking at Stomach or Flanks',
+    desc:'Self-directed attention to the abdomen.',
+    rubric:{
+      1:'No flank watching observed.',
+      3:'Occasional glance toward the flank.',
+      5:'Repeated turning of the head to the abdomen.',
+      7:'Frequent biting or nipping at the flanks.',
+      10:'Constant flank watching with rolling intent — classic colic sign.'
+    }
+  },
+  {
+    key:'lipcurl', section:'mental',
+    title:'Lip Curling (Flehmen / Tension)',
+    desc:'Upper lip behavior beyond normal scent investigation.',
+    rubric:{
+      1:'Soft, relaxed lips; no curling.',
+      3:'Occasional flehmen in response to scent — normal.',
+      5:'Repeated lip curling without clear stimulus.',
+      7:'Tense, drawn-back upper lip with grimace.',
+      10:'Sustained lip retraction with bared teeth — marked pain.'
+    }
+  },
+  {
+    key:'pawing', section:'stomach',
+    title:'Pawing or Kicking to Abdomen',
+    desc:'Forelimb pawing or hindlimb kicks toward the belly.',
+    rubric:{
+      1:'No pawing or kicking.',
+      3:'Occasional pawing — impatience, not pain.',
+      5:'Repeated pawing episodes.',
+      7:'Pawing with attempts to kick at the abdomen.',
+      10:'Violent pawing and kicking at belly; risk of self-injury.'
+    }
+  },
+  {
+    key:'appetite', section:'stomach',
+    title:'Eating Behavior and Appetite',
+    desc:'Interest and engagement with food and water.',
+    rubric:{
+      1:'Eats and drinks normally with strong interest.',
+      3:'Slightly slower intake, otherwise eating well.',
+      5:'Reduced appetite; leaves part of the ration.',
+      7:'Picks at food, refuses concentrates.',
+      10:'Complete refusal of food and water.'
+    }
+  },
+  {
+    key:'sweat', section:'legs',
+    title:'Sweating Rate',
+    desc:'Sweating disproportionate to exertion or temperature.',
+    rubric:{
+      1:'Dry coat; no abnormal sweating.',
+      3:'Light dampness behind the ears or flanks.',
+      5:'Moderate patchy sweating at rest.',
+      7:'Heavy sweating with elevated respiration.',
+      10:'Profuse sweating over the whole body — acute distress.'
+    }
+  },
+  {
+    key:'interact', section:'mental',
+    title:'Interaction Responsiveness',
+    desc:'Engagement with handler and surroundings.',
+    rubric:{
+      1:'Bright, alert, responsive — engages willingly.',
+      3:'Calm but slightly muted response.',
+      5:'Withdrawn; needs encouragement to respond.',
+      7:'Dull, unresponsive to voice and touch.',
+      10:'Completely unresponsive or aggressively avoidant.'
+    }
+  },
+  {
+    key:'movement', section:'legs',
+    title:'Movements (Relaxed vs Restless)',
+    desc:'Overall locomotor behavior and willingness.',
+    rubric:{
+      1:'Calm, relaxed movement; willing transitions.',
+      3:'Slight hesitation but generally smooth.',
+      5:'Restless shifting or reluctance to move forward.',
+      7:'Clear refusal, stiff or guarded gait.',
+      10:'Cannot or will not move; thrashing or collapse.'
+    }
+  },
+  {
+    key:'hgs', section:'mental',
+    title:'Horse Grimace Scale (HGS) — Mental & Emotional State',
+    desc:'Composite facial expression score from the six classic HGS action units.',
+    hgs:true,
+    facets:[
+      { key:'ears',   label:'Stiffly backwards ears' },
+      { key:'orbit',  label:'Orbital tightening' },
+      { key:'eye',    label:'Tension above the eye area' },
+      { key:'cheek',  label:'Prominent strained chewing muscles' },
+      { key:'mouth',  label:'Mouth strained, pronounced chin' },
+      { key:'nostril',label:'Strained nostrils & flattening of the profile' },
+    ],
+    rubric:{
+      1:'Soft, neutral face — ears mobile, eyes round, muzzle relaxed.',
+      3:'Subtle tension in one or two features.',
+      5:'Moderate facial tension across several action units.',
+      7:'Marked grimace; multiple features clearly strained.',
+      10:'Severe grimace across all six features — significant pain.'
+    }
+  },
+];
+
+const SECTIONS = {
+  legs:    { title:'Legs & Musculoskeletal Tension', icon:'🦵', accent:'#8B5A2B' },
+  mental:  { title:'Mental & Emotional State',       icon:'🧠', accent:'#2C3F2F' },
+  stomach: { title:'Stomach & Digestive Comfort',    icon:'🌿', accent:'#9C7A2E' },
+};
+
+// ---------- State ----------
+const STORE_KEY = 'equisense.scores.v3';
+const HGS_KEY   = 'equisense.hgs.v3';
+
+const state = {
+  view:'home',
+  paramIndex:0,
+  scores: load(STORE_KEY, {}),       // { paramKey: number }
+  hgs: load(HGS_KEY, {}),            // { facetKey: number }
+};
+
+function load(k, fb){ try{ return JSON.parse(localStorage.getItem(k)) || fb; }catch(e){ return fb; } }
+function save(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+function saveAll(){ save(STORE_KEY, state.scores); save(HGS_KEY, state.hgs); }
+
+function hgsAverage(){
+  const vals = PARAMETERS.find(p=>p.hgs).facets.map(f=> state.hgs[f.key]).filter(v=>typeof v==='number');
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+
+function paramScore(p){
+  if(p.hgs) return hgsAverage();
+  return typeof state.scores[p.key] === 'number' ? state.scores[p.key] : null;
+}
+
+function completedCount(){
+  return PARAMETERS.filter(p => paramScore(p) !== null).length;
+}
+
+function updateProgress(){
+  const c = completedCount();
+  document.getElementById('progressText').textContent = `${c} / 11 complete`;
+  document.getElementById('progressBar').style.width = `${(c/11)*100}%`;
+}
+
+function sectionAvg(sectionKey){
+  const items = PARAMETERS.filter(p=>p.section===sectionKey);
+  const vals = items.map(paramScore).filter(v=>v!==null);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function overallAvg(){
+  const vals = PARAMETERS.map(paramScore).filter(v=>v!==null);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+
+// ---------- Risk levels ----------
+function riskFor(score){
+  if(score===null||score===undefined) return { label:'Not assessed', tone:'neutral', hex:'#9c8a72', desc:'No data yet — complete the assessment.' };
+  if(score <= 3)   return { label:'Good',              tone:'good',    hex:'#2C3F2F', desc:'Horse appears comfortable and balanced.' };
+  if(score <= 5)   return { label:'Mild Concern',      tone:'mild',    hex:'#C9A24B', desc:'Mild signs detected — monitor closely.' };
+  if(score <= 7.5) return { label:'Moderate Concern',  tone:'mod',     hex:'#B97A2E', desc:'Moderate discomfort — adjust workload, observe carefully.' };
+  return              { label:'High Pain / Distress', tone:'high',    hex:'#8E2B22', desc:'Significant pain or distress — recommend veterinary assessment.' };
+}
+
+function overallVerdict(score){
+  if(score===null) return 'Complete the assessment to receive a professional verdict.';
+  if(score <= 3)   return 'Horse is in good condition and appears comfortable. Cleared for normal work.';
+  if(score <= 5)   return 'Mild discomfort detected. Reduce intensity, monitor closely over the next 24 hours.';
+  if(score <= 7.5) return 'Moderate discomfort and tension present. Do not work or race — investigate the cause.';
+  return 'Significant pain and distress present — recommend immediate veterinary assessment.';
+}
+
+// ---------- Router ----------
+function go(view, opts={}){
+  state.view = view;
+  if(typeof opts.paramIndex === 'number') state.paramIndex = opts.paramIndex;
+  render();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function render(){
+  const root = document.getElementById('app');
+  root.innerHTML = '';
+  if(state.view==='home')    root.appendChild(viewHome());
+  else if(state.view==='param')  root.appendChild(viewParam(state.paramIndex));
+  else if(state.view==='results') root.appendChild(viewResults());
+  updateProgress();
+}
+
+// ---------- Views ----------
+function el(html){
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+
+function viewHome(){
+  const wrap = el(`<section class="fade-up"></section>`);
+  wrap.innerHTML = `
+    <div class="grid md:grid-cols-12 gap-10 items-center mb-14">
+      <div class="md:col-span-7">
+        <span class="chip mb-5"><span class="dot bg-gold"></span> Premium Equine Assessment</span>
+        <h1 class="font-serif text-5xl md:text-6xl leading-[1.05] text-forest-deep">
+          Read your horse<br/>
+          <span class="num-display">with quiet precision.</span>
+        </h1>
+        <p class="mt-6 text-lg text-ink/75 max-w-xl leading-relaxed">
+          EquiSense is a refined eleven-point evaluation of physical condition,
+          digestive comfort and emotional state — including the
+          <em class="text-forest">Horse Grimace Scale</em> — designed for trainers,
+          grooms and veterinarians.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <button data-act="start" class="btn btn-primary">
+            Begin Assessment
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+          <button data-act="results" class="btn btn-gold">View Summary</button>
+        </div>
+        <div class="mt-8 flex items-center gap-6 text-sm text-ink/60">
+          <div class="flex items-center gap-2"><span class="dot bg-forest"></span> 11 parameters</div>
+          <div class="flex items-center gap-2"><span class="dot bg-gold"></span> 1·3·5·7·10 scale</div>
+          <div class="flex items-center gap-2"><span class="dot bg-brown"></span> HGS included</div>
+        </div>
+      </div>
+      <div class="md:col-span-5">
+        <div class="card p-7 ring-gold">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <div class="text-xs tracking-[0.2em] uppercase text-brown/70">Live Status</div>
+              <div class="font-serif text-2xl text-forest-deep mt-1">Today's Assessment</div>
+            </div>
+            <div class="text-right">
+              <div class="text-3xl num-display leading-none">${completedCount()}<span class="text-ink/40 text-xl">/11</span></div>
+              <div class="text-xs text-ink/55 mt-1">parameters complete</div>
+            </div>
+          </div>
+          <div class="h-2 rounded-full bg-cream-deep overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-forest via-gold to-brown shimmer" style="width:${(completedCount()/11)*100}%"></div>
+          </div>
+          <div class="divider my-5"></div>
+          ${overallAvg()!==null ? `
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs tracking-[0.2em] uppercase text-brown/70">Current Verdict</div>
+                <div class="mt-1 text-forest-deep font-semibold">${riskFor(overallAvg()).label}</div>
+              </div>
+              <div class="num-display text-4xl">${overallAvg().toFixed(1)}</div>
+            </div>` : `
+            <div class="text-sm text-ink/60">Start the assessment to reveal your horse's overall condition score.</div>
+          `}
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <h2 class="font-serif text-3xl text-forest-deep">The Eleven Parameters</h2>
+        <p class="text-ink/65 mt-1">Tap any parameter to assess. Your progress is saved automatically.</p>
+      </div>
+      <span class="chip hidden md:inline-flex"><span class="dot" style="background:#C9A24B"></span> Premium Atelier</span>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" id="cards"></div>
+  `;
+  const grid = wrap.querySelector('#cards');
+  PARAMETERS.forEach((p, i)=>{
+    const score = paramScore(p);
+    const r = riskFor(score);
+    const sec = SECTIONS[p.section];
+    const card = el(`
+      <button data-act="param" data-idx="${i}" class="card p-6 text-left group relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <span class="chip" style="background:${sec.accent}14; color:${sec.accent}; border-color:${sec.accent}33">
+            <span class="dot" style="background:${sec.accent}"></span> ${sec.title.split(' & ')[0]}
+          </span>
+          <span class="text-xs font-semibold tracking-wider uppercase" style="color:${r.hex}">${score===null?'Pending':r.label}</span>
+        </div>
+        <div class="mt-5 flex items-start gap-4">
+          <div class="num-display text-5xl leading-none w-14 shrink-0">${String(i+1).padStart(2,'0')}</div>
+          <div>
+            <h3 class="font-serif text-xl text-forest-deep group-hover:text-brown-deep transition-colors">${p.title}</h3>
+            <p class="text-sm text-ink/65 mt-1.5 leading-relaxed">${p.desc}</p>
+          </div>
+        </div>
+        <div class="mt-6 flex items-center justify-between">
+          <div class="text-xs text-ink/55">${p.hgs?'6 facial action units':'Score 1 · 3 · 5 · 7 · 10'}</div>
+          <div class="flex items-center gap-2">
+            ${score!==null ? `<span class="num-display text-2xl">${score.toFixed(1)}</span>` : ''}
+            <span class="w-8 h-8 rounded-full grid place-items-center border border-brown/30 group-hover:bg-brown group-hover:text-cream group-hover:border-brown transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </div>
+      </button>
+    `);
+    grid.appendChild(card);
+  });
+  return wrap;
+}
+
+function viewParam(idx){
+  const p = PARAMETERS[idx];
+  const sec = SECTIONS[p.section];
+  const wrap = el(`<section class="fade-up"></section>`);
+
+  if(p.hgs){
+    wrap.appendChild(viewHGS(p, sec, idx));
+    return wrap;
+  }
+
+  const current = typeof state.scores[p.key] === 'number' ? state.scores[p.key] : 5;
+  const r = riskFor(current);
+
+  wrap.innerHTML = `
+    <div class="flex items-center justify-between mb-6">
+      <button data-act="home" class="btn btn-ghost text-sm">← All parameters</button>
+      <div class="text-sm text-ink/60">Parameter <span class="font-semibold text-forest">${idx+1}</span> of 11</div>
+    </div>
+
+    <div class="card p-8 md:p-10">
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <span class="chip" style="background:${sec.accent}14; color:${sec.accent}; border-color:${sec.accent}33">
+          <span class="dot" style="background:${sec.accent}"></span> ${sec.title}
+        </span>
+        <span class="chip">Scale 1 · 3 · 5 · 7 · 10</span>
+      </div>
+      <h1 class="font-serif text-3xl md:text-4xl text-forest-deep">${p.title}</h1>
+      <p class="text-ink/70 mt-2 max-w-2xl leading-relaxed">${p.desc}</p>
+
+      <div class="grid lg:grid-cols-12 gap-8 mt-8">
+        <div class="lg:col-span-7">
+          <div class="rounded-2xl bg-cream-soft border border-brown/10 p-6">
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-xs tracking-[0.2em] uppercase text-brown/70">Selected Score</div>
+                <div id="scoreNum" class="num-display text-7xl leading-none mt-1">${current}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs tracking-[0.2em] uppercase text-brown/70">Indication</div>
+                <div id="scoreLabel" class="mt-1 font-semibold" style="color:${r.hex}">${r.label}</div>
+              </div>
+            </div>
+            <div class="mt-6">
+              <input id="slider" type="range" min="1" max="10" step="1" value="${current}" class="lux" />
+              <div class="flex justify-between text-[11px] text-ink/55 mt-2 font-medium">
+                <span>1</span><span>3</span><span>5</span><span>7</span><span>10</span>
+              </div>
+            </div>
+            <div class="mt-6 grid grid-cols-5 gap-2">
+              ${RUBRIC_STEPS.map(v=>`
+                <button data-set="${v}" class="rounded-xl border border-brown/15 bg-white/70 px-3 py-2 text-sm font-semibold hover:bg-brown hover:text-cream hover:border-brown transition">
+                  ${v}
+                </button>`).join('')}
+            </div>
+            <p id="rubricText" class="mt-5 text-ink/75 italic">${closestRubric(p, current)}</p>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5">
+          <div class="rounded-2xl border border-brown/10 bg-white/70 p-6">
+            <div class="text-xs tracking-[0.2em] uppercase text-brown/70 mb-3">Scoring Guide</div>
+            <ul class="space-y-3">
+              ${RUBRIC_STEPS.map(v=>`
+                <li class="flex gap-3">
+                  <span class="num-display w-7 shrink-0 text-xl">${v}</span>
+                  <span class="text-sm text-ink/75 leading-relaxed">${p.rubric[v]}</span>
+                </li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 mt-8">
+        <button data-act="prev" class="btn btn-ghost">← Previous</button>
+        <div class="flex items-center gap-3">
+          <span id="savedFlash" class="text-sm text-forest font-medium opacity-0 transition-opacity">Saved ✓</span>
+          <button data-act="save" class="btn btn-gold">Save</button>
+          <button data-act="next" class="btn btn-primary">${idx===PARAMETERS.length-1?'Finish & View Results':'Next →'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // wire slider
+  const slider = wrap.querySelector('#slider');
+  const numEl  = wrap.querySelector('#scoreNum');
+  const labEl  = wrap.querySelector('#scoreLabel');
+  const rubEl  = wrap.querySelector('#rubricText');
+  slider.addEventListener('input', e=>{
+    const v = parseInt(e.target.value,10);
+    numEl.textContent = v;
+    const rr = riskFor(v);
+    labEl.textContent = rr.label;
+    labEl.style.color = rr.hex;
+    rubEl.textContent = closestRubric(p, v);
+  });
+  wrap.querySelectorAll('[data-set]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const v = parseInt(b.dataset.set,10);
+      slider.value = v;
+      slider.dispatchEvent(new Event('input'));
+    });
+  });
+  return wrap;
+}
+
+function closestRubric(p, v){
+  const steps = RUBRIC_STEPS;
+  const k = steps.reduce((a,b)=> Math.abs(b-v)<Math.abs(a-v)?b:a, steps[0]);
+  return p.rubric[k];
+}
+
+function viewHGS(p, sec, idx){
+  const wrap = el('<div></div>');
+  const facets = p.facets;
+  wrap.innerHTML = `
+    <div class="flex items-center justify-between mb-6">
+      <button data-act="home" class="btn btn-ghost text-sm">← All parameters</button>
+      <div class="text-sm text-ink/60">Parameter <span class="font-semibold text-forest">${idx+1}</span> of 11</div>
+    </div>
+    <div class="card p-8 md:p-10">
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <span class="chip" style="background:${sec.accent}14; color:${sec.accent}; border-color:${sec.accent}33">
+          <span class="dot" style="background:${sec.accent}"></span> ${sec.title}
+        </span>
+        <span class="chip">Horse Grimace Scale</span>
+      </div>
+      <h1 class="font-serif text-3xl md:text-4xl text-forest-deep">${p.title}</h1>
+      <p class="text-ink/70 mt-2 max-w-3xl leading-relaxed">
+        Score each of the six classic facial action units from <strong>1</strong> (relaxed) to <strong>10</strong> (severely strained).
+        The overall HGS score is the average across all six.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-5 mt-8" id="hgsGrid"></div>
+
+      <div class="mt-8 rounded-2xl bg-forest-deep text-cream p-6 md:p-7 flex items-center justify-between">
+        <div>
+          <div class="text-xs tracking-[0.2em] uppercase text-cream/60">Composite HGS Score</div>
+          <div id="hgsLabel" class="mt-1 font-serif text-2xl">—</div>
+        </div>
+        <div id="hgsAvg" class="font-serif text-6xl text-gold-soft">—</div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 mt-8">
+        <button data-act="prev" class="btn btn-ghost">← Previous</button>
+        <div class="flex items-center gap-3">
+          <span id="savedFlash" class="text-sm text-forest font-medium opacity-0 transition-opacity">Saved ✓</span>
+          <button data-act="save" class="btn btn-gold">Save</button>
+          <button data-act="next" class="btn btn-primary">Finish & View Results</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const grid = wrap.querySelector('#hgsGrid');
+  facets.forEach(f=>{
+    const v = typeof state.hgs[f.key] === 'number' ? state.hgs[f.key] : 5;
+    const card = el(`
+      <div class="rounded-2xl border border-brown/10 bg-cream-soft p-5">
+        <div class="flex items-center justify-between">
+          <div class="font-serif text-lg text-forest-deep pr-3">${f.label}</div>
+          <div class="num-display text-3xl" data-num="${f.key}">${v}</div>
+        </div>
+        <input data-facet="${f.key}" type="range" min="1" max="10" step="1" value="${v}" class="lux mt-4"/>
+        <div class="flex justify-between text-[11px] text-ink/55 mt-2 font-medium">
+          <span>1</span><span>3</span><span>5</span><span>7</span><span>10</span>
+        </div>
+      </div>
+    `);
+    grid.appendChild(card);
+  });
+
+  // initialise defaults so average shows
+  facets.forEach(f=>{ if(typeof state.hgs[f.key]!=='number') state.hgs[f.key]=5; });
+  updateHgsDisplay(wrap);
+
+  wrap.querySelectorAll('[data-facet]').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const key = inp.dataset.facet;
+      const v = parseInt(e.target.value,10);
+      state.hgs[key] = v;
+      wrap.querySelector(`[data-num="${key}"]`).textContent = v;
+      updateHgsDisplay(wrap);
+    });
+  });
+  return wrap;
+}
+
+function updateHgsDisplay(wrap){
+  const avg = hgsAverage();
+  const r = riskFor(avg);
+  wrap.querySelector('#hgsAvg').textContent = avg!==null ? avg.toFixed(1) : '—';
+  wrap.querySelector('#hgsLabel').innerHTML = avg!==null
+    ? `${r.label} <span class="text-cream/60 font-sans text-sm ml-2">${r.desc}</span>`
+    : 'Adjust the sliders to compute the composite score.';
+}
+
+// ---------- Results ----------
+function viewResults(){
+  const wrap = el(`<section class="fade-up"></section>`);
+  const overall = overallAvg();
+  const r = riskFor(overall);
+
+  // Section cards
+  const sectionCards = Object.entries(SECTIONS).map(([k,s])=>{
+    const a = sectionAvg(k);
+    const rr = riskFor(a);
+    return `
+      <div class="card p-6">
+        <div class="flex items-center justify-between">
+          <span class="chip" style="background:${s.accent}14; color:${s.accent}; border-color:${s.accent}33">
+            <span class="dot" style="background:${s.accent}"></span> ${s.title}
+          </span>
+          <span class="text-xs font-semibold tracking-wider uppercase" style="color:${rr.hex}">${rr.label}</span>
+        </div>
+        <div class="mt-4 flex items-end justify-between">
+          <div class="num-display text-5xl leading-none">${a===null?'—':a.toFixed(1)}<span class="text-ink/40 text-xl">/10</span></div>
+          <div class="text-right text-xs text-ink/55 max-w-[55%]">${rr.desc}</div>
+        </div>
+        <div class="h-2 rounded-full bg-cream-deep overflow-hidden mt-5">
+          <div class="h-full" style="width:${a===null?0:(a/10*100)}%; background:${rr.hex}"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Per-parameter table
+  const rows = PARAMETERS.map((p,i)=>{
+    const s = paramScore(p);
+    const rr = riskFor(s);
+    return `
+      <tr class="border-b border-brown/10 last:border-0">
+        <td class="py-3 pr-3 text-ink/55 font-medium">${String(i+1).padStart(2,'0')}</td>
+        <td class="py-3 pr-3">
+          <div class="font-semibold text-forest-deep">${p.title}</div>
+          <div class="text-xs text-ink/55">${SECTIONS[p.section].title}</div>
+        </td>
+        <td class="py-3 pr-3 text-right num-display text-xl">${s===null?'—':s.toFixed(1)}</td>
+        <td class="py-3 text-right">
+          <span class="chip" style="background:${rr.hex}14; color:${rr.hex}; border-color:${rr.hex}33">
+            <span class="dot" style="background:${rr.hex}"></span> ${rr.label}
+          </span>
+        </td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="flex items-center justify-between mb-6 no-print">
+      <button data-act="home" class="btn btn-ghost text-sm">← All parameters</button>
+      <div class="flex gap-2">
+        <button data-act="print" class="btn btn-gold">Export PDF</button>
+        <button data-act="reset" class="btn btn-ghost text-sm">Reset</button>
+      </div>
+    </div>
+
+    <!-- Overall verdict -->
+    <div class="card p-8 md:p-10 mb-8 relative overflow-hidden">
+      <div class="absolute -right-20 -top-20 w-72 h-72 rounded-full" style="background:radial-gradient(circle, ${r.hex}22, transparent 70%)"></div>
+      <span class="chip"><span class="dot" style="background:${r.hex}"></span> Final Verdict</span>
+      <div class="grid md:grid-cols-12 gap-8 mt-5">
+        <div class="md:col-span-4">
+          <div class="text-xs tracking-[0.2em] uppercase text-brown/70">Overall Score</div>
+          <div class="num-display text-7xl md:text-8xl leading-none mt-2">${overall===null?'—':overall.toFixed(1)}<span class="text-ink/30 text-3xl">/10</span></div>
+          <div class="mt-4 inline-flex items-center gap-2 font-semibold" style="color:${r.hex}">
+            <span class="dot" style="background:${r.hex}"></span> ${r.label}
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <h2 class="font-serif text-3xl md:text-4xl text-forest-deep leading-tight">
+            ${overallVerdict(overall)}
+          </h2>
+          <p class="text-ink/70 mt-3 leading-relaxed">
+            Based on ${completedCount()} of 11 parameters assessed, including the Horse Grimace Scale.
+            This report is intended to support — not replace — professional veterinary judgement.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 sections -->
+    <div class="grid md:grid-cols-2 gap-5 mb-8">
+      ${sectionCards}
+      <div class="card p-6" style="background:linear-gradient(180deg,#1B281C,#2C3F2F); color:#FBF6EE; border-color:rgba(201,162,75,0.3)">
+        <div class="flex items-center justify-between">
+          <span class="chip" style="background:rgba(201,162,75,0.18); color:#E6CB80; border-color:rgba(201,162,75,0.35)">
+            <span class="dot" style="background:#C9A24B"></span> Overall Horse Condition & Mood
+          </span>
+          <span class="text-xs font-semibold tracking-wider uppercase" style="color:${r.hex==='#2C3F2F'?'#E6CB80':r.hex}">${r.label}</span>
+        </div>
+        <div class="mt-4 flex items-end justify-between">
+          <div class="font-serif text-5xl text-gold-soft leading-none">${overall===null?'—':overall.toFixed(1)}<span class="text-cream/40 text-xl">/10</span></div>
+          <div class="text-right text-xs text-cream/70 max-w-[55%]">${overall===null?'Awaiting data.':overallVerdict(overall)}</div>
+        </div>
+        <div class="h-2 rounded-full bg-cream/15 overflow-hidden mt-5">
+          <div class="h-full bg-gradient-to-r from-gold-soft via-gold to-brown-soft" style="width:${overall===null?0:(overall/10*100)}%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per parameter table -->
+    <div class="card p-6 md:p-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-serif text-2xl text-forest-deep">Parameter Breakdown</h3>
+        <span class="chip"><span class="dot bg-gold"></span> 1·3·5·7·10 scale</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-ink/55 border-b border-brown/15">
+              <th class="py-2 pr-3 font-semibold">#</th>
+              <th class="py-2 pr-3 font-semibold">Parameter</th>
+              <th class="py-2 pr-3 font-semibold text-right">Score</th>
+              <th class="py-2 font-semibold text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+// ---------- Actions ----------
+function commitCurrentParam(){
+  const p = PARAMETERS[state.paramIndex];
+  if(p.hgs){
+    // HGS already saved on input — make sure defaults persist
+    PARAMETERS.find(x=>x.hgs).facets.forEach(f=>{
+      if(typeof state.hgs[f.key]!=='number') state.hgs[f.key]=5;
+    });
+  } else {
+    const slider = document.getElementById('slider');
+    if(slider) state.scores[p.key] = parseInt(slider.value,10);
+  }
+  saveAll();
+}
+
+function flashSaved(){
+  const f = document.getElementById('savedFlash');
+  if(!f) return;
+  f.style.opacity = '1';
+  clearTimeout(flashSaved._t);
+  flashSaved._t = setTimeout(()=> f.style.opacity='0', 1200);
+}
+
+function resetAll(){
+  if(!confirm('Reset all assessment scores?')) return;
+  state.scores = {}; state.hgs = {};
+  saveAll();
+  go('home');
+}
+
+// Delegate clicks
+document.addEventListener('click', (e)=>{
+  const t = e.target.closest('[data-act]');
+  if(!t) return;
+  const act = t.dataset.act;
+  if(act==='home')    return go('home');
+  if(act==='start')   return go('param',{paramIndex:0});
+  if(act==='results') return go('results');
+  if(act==='reset')   return resetAll();
+  if(act==='print'){ window.print(); return; }
+  if(act==='param')   return go('param', { paramIndex: parseInt(t.dataset.idx,10) });
+  if(act==='prev'){
+    commitCurrentParam();
+    if(state.paramIndex>0) go('param',{paramIndex:state.paramIndex-1});
+    else go('home');
+    return;
+  }
+  if(act==='next'){
+    commitCurrentParam();
+    updateProgress();
+    if(state.paramIndex < PARAMETERS.length-1) go('param',{paramIndex:state.paramIndex+1});
+    else go('results');
+    return;
+  }
+  if(act==='save'){ commitCurrentParam(); updateProgress(); flashSaved(); return; }
+});
+
+// Initial render
+render();
+</script>
+</body>
+</html>
